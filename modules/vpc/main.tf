@@ -82,3 +82,70 @@ resource "aws_route_table_association" "private" {
   subnet_id       = aws_subnet.private.*.id[count.index]
   route_table_id  = aws_route_table.private.id
 }
+
+# Security group
+resource "aws_security_group" "ssh" {
+  name        = "ssh"
+  description = "Allow ssh traffic"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "ssh connection"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = "${merge(var.tags, tomap({
+    "Name" = format("%s-ssh", var.name)
+  }))}"
+}
+
+resource "aws_security_group" "nat" {
+  name = "nat_instance"
+  description = "Allow private subnet outbound traffic"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "nat"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = aws_subnet.private.*.cidr_block
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = "${merge(var.tags, tomap({
+    "Name" = format("%s-nat", var.name)
+  }))}"
+}
+
+# NAT instance
+resource "aws_instance" "nat_instance" {
+  ami                         = "ami-00295862c013bede0" // amzn-ami-vpc-nat
+  instance_type               = "t3.micro"
+  key_name                    = "secret"
+  associate_public_ip_address = true
+  source_dest_check           = false
+
+  subnet_id               = aws_subnet.public.*.id[0]
+  vpc_security_group_ids  = [aws_security_group.ssh.id, aws_security_group.nat.id]
+  
+  tags = "${merge(var.tags, tomap({
+    "Name" = format("%s-bastion", var.name)
+  }))}"
+}

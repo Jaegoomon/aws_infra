@@ -12,3 +12,8 @@ output private_subnet_ids {
   value       = aws_subnet.private.*.id
   description = "Private subnet id list"
 }
+
+output key_name {
+  value       = aws_key_pair.secret.key_name
+  description = "Key name for aws instance"
+}
