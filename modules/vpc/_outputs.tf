@@ -17,3 +17,8 @@ output key_name {
   value       = aws_key_pair.secret.key_name
   description = "Key name for aws instance"
 }
+
+output ssh_sg_id {
+  value       = aws_security_group.ssh.id
+  description = "ssh security group id"
+}
