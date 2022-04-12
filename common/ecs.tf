@@ -47,3 +47,27 @@ resource "aws_security_group" "autoscale" {
     Name = "autoscale security sg"
   }
 }
+
+# # Task definition
+# resource "aws_ecs_task_definition" "task_definition" {
+#   family                = "worker"
+#   container_definitions = file("../ecs_demo.json.tpl")
+# }
+
+# Service
+resource "aws_ecs_service" "worker" {
+  name            = "worker"
+  cluster         = module.ecs.cluster_id
+  task_definition = ""
+  desired_count   = 1
+
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.blue.arn
+    container_name = "web"
+    container_port = 80
+  }
+}
