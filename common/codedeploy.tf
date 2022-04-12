@@ -4,7 +4,7 @@ resource "aws_codedeploy_app" "ecs" {
 }
 
 resource "aws_codedeploy_deployment_group" "ecs" {
-  app_name               = aws_codedeploy_app.example.name
+  app_name               = aws_codedeploy_app.ecs.name
   deployment_config_name = "CodeDeployDefault.ECSLinear10PercentEvery1Minutes"
   deployment_group_name  = "ecs-deploy-group"
   service_role_arn       = aws_iam_role.codedeploy_role.arn
