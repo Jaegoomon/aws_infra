@@ -23,4 +23,40 @@ resource "aws_autoscaling_group" "this" {
   health_check_type    = "EC2"
   launch_configuration = aws_launch_configuration.this.name
   vpc_zone_identifier  = "${var.subnet_ids}"
+
+  protect_from_scale_in = false
+
+  tag {
+    key                 = "AmazonECSManaged"
+    value               = true
+    propagate_at_launch = true
+  }
+}
+
+resource "aws_ecs_capacity_provider" "this" {
+  name = "test"
+
+  auto_scaling_group_provider {
+    auto_scaling_group_arn         = aws_autoscaling_group.this.arn
+    managed_termination_protection = "DISABLED"
+
+    managed_scaling {
+      maximum_scaling_step_size = 1
+      minimum_scaling_step_size = 1
+      status                    = "ENABLED"
+      target_capacity           = 1
+    }
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "this" {
+  cluster_name = "${var.ecs_cluster_name}"
+
+  capacity_providers = [aws_ecs_capacity_provider.this.name]
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = aws_ecs_capacity_provider.this.name
+  }
 }
