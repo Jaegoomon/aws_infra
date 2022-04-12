@@ -25,3 +25,19 @@ resource "aws_iam_instance_profile" "ecs" {
   path = "/"
   role = aws_iam_role.ecs_host_role.name
 }
+
+resource "aws_iam_role" "codedeploy_role" {
+  name                = "codedeploy_role"
+  assume_role_policy  = file("../iam/codedeploy_role.json")
+}
+
+resource "aws_iam_role_policy" "codedeploy_role_policy" {
+  name   = "codedeploy_role_policy"
+  policy = file("../iam/codedeploy_role_policy.json")
+  role   = aws_iam_role.codedeploy_role.id
+}
+
+# resource "aws_iam_role_policy_attachment" "test-attach" {
+#   role       = aws_iam_role.codedeploy_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+# }
