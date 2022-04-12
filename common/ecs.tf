@@ -1,7 +1,7 @@
 module ecs {
   source = "../modules/ecs"
 
-  ecs_cluster_name = "ecs-demo-terraform"
+  ecs_cluster_name = "pikurate-dashboard-terraform"
 
   image_id          = "ami-04c0ac9468f496b8e"
   instance_type     = "t3.micro"
@@ -12,8 +12,8 @@ module ecs {
   autoscale_sg  = [module.vpc.ssh_sg_id, aws_security_group.autoscale.id]
   
   autoscale_min     = 1
-  autoscale_max     = 10
-  autoscale_desired = 2
+  autoscale_max     = 3
+  autoscale_desired = 1
 }
 
 # Security group
