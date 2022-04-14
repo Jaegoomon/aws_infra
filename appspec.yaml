@@ -1,0 +1,13 @@
+version: 1
+Resources:
+- TargetService:
+    Type: AWS::ECS::Service
+    Properties:
+      TaskDefinition: arn:aws:ecs:us-west-2:<MyAccountNumber>:task-definition/<MyTaskDefinitionName>:<MyTaskDefinitionVersion>
+      LoadBalancerInfo:
+        ContainerName: "<MyContainerName>"
+        ContainerPort: "<MyContainerPort>"
+      CapacityProviderStrategy:
+      - CapacityProvider: "<MyCapacityProviderNameFromECSCluster>"
+        Base: 0
+        Weight: 1
