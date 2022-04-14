@@ -14,7 +14,7 @@ output private_subnet_ids {
 }
 
 output key_name {
-  value       = aws_key_pair.secret.key_name
+  value       = aws_key_pair.nat.key_name
   description = "Key name for aws instance"
 }
 

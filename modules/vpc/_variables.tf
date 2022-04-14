@@ -29,3 +29,13 @@ variable tags {
   type        = map
   description = "Tag map for all resources"
 }
+
+variable key_name {
+  type        = string
+  description = "Key name for nat instance"
+}
+
+variable key_file {
+  type        = string
+  description = "description"
+}

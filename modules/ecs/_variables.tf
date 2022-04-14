@@ -15,20 +15,14 @@ variable instance_type {
   description = "EC2 instance type"
 }
 
-variable instance_profile {
-  type        = string
-  description = "EC2 iam instance profile"
-}
-
-variable autoscale_sg {
-  type        = list
-  description = "Security group for autoscaling instances"
-}
-
-
-variable subnet_ids {
+variable private_subnet_ids {
   type        = list
   description = "Subnets for autoscaling group instances"
+}
+
+variable public_subnet_ids {
+  type        = list
+  description = "Subnets for load balancer"
 }
 
 variable key_name {

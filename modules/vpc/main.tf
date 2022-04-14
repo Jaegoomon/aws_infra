@@ -46,7 +46,7 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block = local.all_ip
     gateway_id = aws_internet_gateway.this.id
   }
 
@@ -59,8 +59,8 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
 
   route {
-    cidr_block  = "0.0.0.0/0"
-    instance_id = aws_instance.nat_instance.id
+    cidr_block  = local.all_ip
+    instance_id = aws_instance.nat.id
   }
 
   tags = "${merge(var.tags, tomap({
@@ -91,17 +91,17 @@ resource "aws_security_group" "ssh" {
 
   ingress {
     description = "ssh connection"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = local.ssh_port
+    to_port     = local.ssh_port
+    protocol    = local.tcp_protocol
+    cidr_blocks = local.all_ips
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = local.any_port
+    to_port     = local.any_port
+    protocol    = local.any_protocol
+    cidr_blocks = local.all_ips
   }
 
   tags = "${merge(var.tags, tomap({
@@ -110,23 +110,23 @@ resource "aws_security_group" "ssh" {
 }
 
 resource "aws_security_group" "nat" {
-  name = "nat_instance"
+  name = "nat"
   description = "Allow private subnet outbound traffic"
   vpc_id      = aws_vpc.this.id
 
   ingress {
     description = "nat"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = local.any_port
+    to_port     = local.any_port
+    protocol    = local.any_protocol
     cidr_blocks = aws_subnet.private.*.cidr_block
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = local.any_port
+    to_port     = local.any_port
+    protocol    = local.any_protocol
+    cidr_blocks = local.all_ips
   }
 
   tags = "${merge(var.tags, tomap({
@@ -134,11 +134,17 @@ resource "aws_security_group" "nat" {
   }))}"
 }
 
+# Key pair
+resource "aws_key_pair" "nat" {
+  key_name   = "${var.key_name}"
+  public_key = "${var.key_file}"
+}
+
 # NAT instance
-resource "aws_instance" "nat_instance" {
+resource "aws_instance" "nat" {
   ami                         = "ami-00295862c013bede0" // amzn-ami-vpc-nat
   instance_type               = "t3.micro"
-  key_name                    = "secret"
+  key_name                    = aws_key_pair.nat.key_name
   associate_public_ip_address = true
   source_dest_check           = false
 
