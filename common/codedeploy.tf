@@ -1,53 +1,48 @@
-resource "aws_codedeploy_app" "ecs" {
-  compute_platform = "ECS"
-  name             = "ecs-deploy-app"
+module codedeploy {
+  source = "../modules/codedeploy"
+
+  app_name = "demo"
+
+  deployment_config_name = "CodeDeployDefault.ECSLinear10PercentEvery1Minutes"
+
+  ecs_cluster_name = module.ecs.cluster_name
+  ecs_service_name = aws_ecs_service.worker.name
+
+  # IAM options
+  codedeploy_role           = file("../iam/codedeploy_role.json")
+  codedeploy_role_policy    = file("../iam/codedeploy_role_policy.json")
+  
+  # VPC options
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+
+  blue_port   = 80
+  green_port  = 81
+
+  tags = {
+    "TerraformManaged" = "true"
+  }
 }
 
-resource "aws_codedeploy_deployment_group" "ecs" {
-  app_name               = aws_codedeploy_app.ecs.name
-  deployment_config_name = "CodeDeployDefault.ECSLinear10PercentEvery1Minutes"
-  deployment_group_name  = "ecs-deploy-group"
-  service_role_arn       = aws_iam_role.codedeploy_role.arn
+# Task definition
+resource "aws_ecs_task_definition" "worker" {
+  family                = "worker"
+  container_definitions = file("../ecs_demo.json.tpl")
+}
 
-  auto_rollback_configuration {
-    enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
+resource "aws_ecs_service" "worker" {
+  name            = "worker"
+  cluster         = module.ecs.cluster_id
+  task_definition = aws_ecs_task_definition.worker.arn
+  desired_count   = 1
+
+  deployment_controller {
+    type = "CODE_DEPLOY"
   }
 
-  blue_green_deployment_config {
-    deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
-    }
-
-    terminate_blue_instances_on_deployment_success {
-      action                           = "TERMINATE"
-      termination_wait_time_in_minutes = 5
-    }
-  }
-
-  deployment_style {
-    deployment_option = "WITH_TRAFFIC_CONTROL"
-    deployment_type   = "BLUE_GREEN"
-  }
-
-  ecs_service {
-    cluster_name = module.ecs.cluster_name
-    service_name = aws_ecs_service.worker.name
-  }
-
-  load_balancer_info {
-    target_group_pair_info {
-      prod_traffic_route {
-        listener_arns = [aws_lb_listener.http_blue.arn]
-      }
-
-      target_group {
-        name = aws_lb_target_group.blue.name
-      }
-
-      target_group {
-        name = aws_lb_target_group.green.name
-      }
-    }
+  load_balancer {
+    target_group_arn = module.codedeploy.blue_target_group
+    container_name = "simple-python-app"
+    container_port = 80
   }
 }
